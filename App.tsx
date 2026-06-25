@@ -1,6 +1,6 @@
 import 'react-native-get-random-values';
 import React, { useEffect, useState } from 'react';
-import { View, ActivityIndicator, Text, StyleSheet, Pressable, Alert } from 'react-native';
+import { View, ActivityIndicator, Text, StyleSheet, Pressable } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import sodium from 'react-native-libsodium';
 import RootNavigator from './src/navigation/RootNavigator';
@@ -27,18 +27,14 @@ export default function App() {
       await sodium.ready;
 
       // Verificação de root — filtrada para dev builds (ver rootPolicy.ts).
+      // Política 'alert': a detecção corre silenciosamente; o aviso visível
+      // fica disponível em Configurações para quem quiser consultar.
+      // Apenas 'restricted' e 'locked' bloqueiam o app ativamente.
       const secStatus = await getSecurityStatus();
-      if (secStatus.status === 'compromised') {
-        if (isOperationBlocked('any')) {
-          setErrorMessage('Ambiente comprometido detectado. O app não pode operar com segurança neste dispositivo.');
-          setStatus('error');
-          return;
-        }
-        Alert.alert(
-          'Aviso de segurança',
-          'Este dispositivo parece ter sido modificado. O Resenha Local pode não proteger seus dados adequadamente.',
-          [{ text: 'Entendido' }]
-        );
+      if (secStatus.status === 'compromised' && isOperationBlocked('any')) {
+        setErrorMessage('Ambiente comprometido detectado. O app não pode operar com segurança neste dispositivo.');
+        setStatus('error');
+        return;
       }
 
       // Banco não precisa de biometria — inicializa antes de qualquer tela.

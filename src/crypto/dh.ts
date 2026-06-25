@@ -48,6 +48,18 @@ import sodium from 'react-native-libsodium';
 const ZERO_NONCE = new Uint8Array(sodium.crypto_box_NONCEBYTES); // 24 bytes
 const ZERO_MESSAGE = new Uint8Array(32);
 
+/**
+ * Copia um Uint8Array nativo JSI (cujo .buffer é inacessível no Hermes)
+ * para um Uint8Array puramente JS, byte a byte — sem usar .set() nem
+ * .buffer. Qualquer resultado de sodium.* deve passar por aqui antes de
+ * ser consumido por código JS downstream.
+ */
+function jsOwned(bytes: Uint8Array): Uint8Array {
+  const copy = new Uint8Array(bytes.length);
+  for (let i = 0; i < bytes.length; i++) copy[i] = bytes[i];
+  return copy;
+}
+
 function isAllZero(bytes: Uint8Array): boolean {
   for (let i = 0; i < bytes.length; i++) {
     if (bytes[i] !== 0) return false;
@@ -67,7 +79,10 @@ function isAllZero(bytes: Uint8Array): boolean {
  */
 export function rawDiffieHellman(ourPrivateKey: Uint8Array, theirPublicKey: Uint8Array): Uint8Array {
   const boxOutput = sodium.crypto_box_easy(ZERO_MESSAGE, ZERO_NONCE, theirPublicKey, ourPrivateKey);
-  const shared = boxOutput.slice(0, 32);
+  // Primeiro copiamos boxOutput INTEIRO para um buffer JS puro, depois
+  // fatiamos — evita qualquer acesso downstream ao buffer JSI nativo.
+  const owned = jsOwned(boxOutput);
+  const shared = owned.slice(0, 32); // owned é JS-owned: .slice() é seguro
 
   if (isAllZero(shared)) {
     throw new Error(
