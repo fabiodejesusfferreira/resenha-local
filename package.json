@@ -18,7 +18,7 @@
 
     "setup:signing": "bash scripts/setup-keystore.sh",
 
-    "build:release": "npx expo prebuild --platform android --clean && cd android && ./gradlew assembleRelease",
+    "build:release": "npx expo prebuild --platform android --clean && node scripts/copy-keystore.js && cd android && ./gradlew assembleRelease",
     "install:release": "adb install -r android/app/build/outputs/apk/release/app-release.apk",
     "release": "npm run build:release && npm run install:release",
 
