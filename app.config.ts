@@ -48,7 +48,12 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       'USE_BIOMETRIC',
     ],
   },
-  plugins: ['expo-secure-store'],
+  plugins: [
+    'expo-secure-store',
+    // Plugin de assinatura de release — injeta keystore no build.gradle automaticamente.
+    // Requer signing.config.json na raiz (ver scripts/setup-keystore.sh).
+    './plugins/withSigning',
+  ],
   extra: {
     eas: {
       projectId: 'COLOQUE_AQUI_O_SEU_PROJECT_ID',

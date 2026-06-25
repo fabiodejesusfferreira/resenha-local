@@ -6,20 +6,31 @@
   "scripts": {
     "start": "expo start --dev-client",
     "android": "expo run:android",
+    "ios": "expo run:ios",
+
     "prebuild": "expo prebuild --clean",
+    "build:android": "npx expo prebuild --platform android",
+
+    "apk": "cd android && ./gradlew assembleRelease",
+    "stop": "cd android && ./gradlew --stop",
+
+    "clear": "rm -rf android .expo",
+
+    "setup:signing": "bash scripts/setup-keystore.sh",
+
+    "build:release": "npx expo prebuild --platform android --clean && cd android && ./gradlew assembleRelease",
+    "install:release": "adb install -r android/app/build/outputs/apk/release/app-release.apk",
+    "release": "npm run build:release && npm run install:release",
+
+    "rebuild": "npm run clear && npm run build:release",
+
+    "android:uninstall": "adb uninstall com.resenhalocal.app",
+    "submit:production": "eas submit --profile production --platform android",
     "build:dev": "eas build --profile development --platform android",
     "build:preview": "eas build --profile preview --platform android",
     "build:production": "eas build --profile production --platform android",
-    "clear": "rm -rf android .expo",
-    "build:android": "npx expo prebuild --platform android",
-    "apk": "cd android && ./gradlew assembleRelease",
-    "stop": "cd android && ./gradlew --stop",
-    "android:install": "cd android/app/build/outputs/apk/release && adb install app-release.apk",
-    "android:uninstall": "adb uninstall com.resenhalocal.app",
-    "submit:production": "eas submit --profile production --platform android",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint . --ext .ts,.tsx",
-    "ios": "expo run:ios"
+    "lint": "eslint . --ext .ts,.tsx"
   },
   "dependencies": {
     "@op-engineering/op-sqlite": "^7.0.0",

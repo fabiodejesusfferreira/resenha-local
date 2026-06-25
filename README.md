@@ -45,6 +45,76 @@ npm start
 
 Repita a instalação do development build em **dois aparelhos** para conseguir testar a descoberta e a troca de mensagens de verdade.
 
+## Build local e assinatura do APK (sem EAS)
+
+O projeto inclui um **plugin de configuração Expo** (`plugins/withSigning.js`) que injeta automaticamente a assinatura de release no `build.gradle` toda vez que a pasta `android/` é regenerada. Isso resolve o problema de perder a configuração ao rodar `npm run clear`.
+
+### Configuração inicial (apenas uma vez)
+
+Antes de gerar o primeiro APK assinado, crie o keystore e o arquivo de credenciais locais:
+
+```bash
+npm run setup:signing
+```
+
+O script vai:
+
+1. Gerar o keystore em `~/.resenha-local/release.keystore` — **fora do projeto**, para não ser apagado com `npm run clear`.
+2. Perguntar as senhas e criar o arquivo `signing.config.json` na raiz do projeto.
+
+> ⚠️ **Guarde as senhas em um gerenciador de senhas.** Perder o keystore ou as senhas torna impossível atualizar o app na Play Store sob o mesmo pacote.
+
+> 🔒 `signing.config.json` e `release.keystore` estão no `.gitignore` — nunca serão versionados.
+
+### Gerar o APK assinado
+
+```bash
+# Faz prebuild + compila o APK de release (assinado)
+npm run build:release
+
+# O APK fica em:
+# android/app/build/outputs/apk/release/app-release.apk
+```
+
+### Instalar no dispositivo via adb
+
+```bash
+# Instala o APK no aparelho conectado
+npm run install:release
+
+# Ou os dois passos de uma vez (build + install):
+npm run release
+```
+
+### Limpar tudo e rebuildar do zero
+
+Este é o fluxo que você já usa — agora com assinatura automática:
+
+```bash
+# Apaga android/ e .expo/, refaz o prebuild e gera o APK assinado
+npm run rebuild
+```
+
+O plugin detecta o `signing.config.json`, copia o keystore para `android/app/release.keystore` e configura o `build.gradle` e o `gradle.properties` — tudo sem intervenção manual.
+
+### Como o plugin funciona
+
+```
+signing.config.json   →   withSigning.js (plugin Expo)
+        ↓
+  expo prebuild
+        ↓
+  android/app/build.gradle  ← signingConfigs.release injetado
+  android/gradle.properties ← RESENHA_STORE_* injetado
+  android/app/release.keystore ← copiado de ~/.resenha-local/
+        ↓
+  ./gradlew assembleRelease
+        ↓
+  APK assinado ✅
+```
+
+---
+
 ## Estrutura do projeto
 
 ```
@@ -103,12 +173,33 @@ Este código foi escrito como referência de arquitetura completa e **não foi c
 
 ## Comandos úteis
 
+### Build local (sem EAS)
+
 ```bash
-npm run typecheck       # checagem de tipos TypeScript
-npm run build:dev        # build de development (EAS, instalável com expo-dev-client)
-npm run build:preview     # build de preview/teste interno (apk)
-npm run build:production  # build de produção (app bundle, para a Play Store)
+npm run setup:signing    # configura keystore e signing.config.json (1x só)
+npm run build:release    # prebuild + APK assinado de release
+npm run install:release  # instala o APK no dispositivo via adb
+npm run release          # build:release + install:release
+npm run rebuild          # clear + build:release (apaga android/ e reconstrói)
+npm run clear            # apaga android/ e .expo/ (limpa o cache)
+npm run apk              # apenas ./gradlew assembleRelease (sem prebuild)
+npm run stop             # para o daemon do Gradle
+```
+
+### Build na nuvem (EAS)
+
+```bash
+npm run build:dev        # build de development (instalável com expo-dev-client)
+npm run build:preview    # build de preview/teste interno (apk)
+npm run build:production # build de produção (app bundle, para a Play Store)
 npm run submit:production # envia o build de produção para a faixa interna da Play Store
+```
+
+### Desenvolvimento
+
+```bash
+npm run typecheck        # checagem de tipos TypeScript
+npm run lint             # lint com ESLint
 ```
 
 ## Problemas comuns

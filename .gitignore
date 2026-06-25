@@ -15,3 +15,7 @@ web-build/
 .env
 .env.local
 modules/*/android/build
+
+# Credenciais de assinatura de release — NUNCA commitar
+signing.config.json
+android/app/release.keystore
